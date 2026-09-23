@@ -3,6 +3,7 @@ from backend.Agent.langgraph_state.State import State
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from backend.Agent.model.LLM import rewrite_llm
 from backend.Schema.schema import RewriteResult
+from backend.Config.config import settings
 
 def rewrite_query(state: State):
     llm_memory=state['messages'][:-1][-10:]
@@ -38,10 +39,10 @@ def _head(m):
     for label,key in [('出处','source'),('版本','edition'),('体裁','genre'),
                        ('创作','time'),('地点','place')]:
         v=m.get(key,'')
-        if v and v!='未著录':
+        if v and v not in settings.UNK:
             bits.append(f'{label}:{v}')
 
-    return '|'.join(bits) if bits else '未著录'
+    return '|'.join(bits) if bits else settings.UNK[1]
 
 
 
@@ -57,7 +58,7 @@ def retriever(state:State):
         r_content.append(f'【{i}】 《{title}》 ({_head(m)}  {doc.page_content})')
         origin_content.append({
                 'ref': i,
-                'doc_id': m.get('doc_id', ''),
+                'doc_id': m.get('poem_id', ''),
                 'title': m.get('title', ''),
                 'source': m.get('source', '未著录'),
                 'edition': m.get('edition', '未著录'),
