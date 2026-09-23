@@ -1,5 +1,5 @@
 from langchain_community.retrievers import BM25Retriever
-from backend.RAG.load_document import load_document
+from backend.Agent.RAG.load_document import load_document
 from functools import lru_cache
 import jieba
 

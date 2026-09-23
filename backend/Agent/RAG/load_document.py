@@ -12,7 +12,7 @@ def _clean(s):
 
 @lru_cache(maxsize=1)
 def load_document():
-    with open(_base_dir/'RAG'/'knowledge'/'杜诗.csv',encoding='utf-8-sig',newline='') as f:
+    with open(_base_dir/'Agent'/'RAG'/'knowledge'/'杜诗.csv',encoding='utf-8-sig',newline='') as f:
         docs=[]
         dict_header=csv.DictReader(f)
         for idx,row in enumerate(dict_header):

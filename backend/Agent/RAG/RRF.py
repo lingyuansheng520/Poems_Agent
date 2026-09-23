@@ -1,6 +1,6 @@
 from langchain_classic.retrievers import EnsembleRetriever
-from backend.RAG.BM25Retriever import get_bm25_retriever
-from backend.RAG.vector_retriever import get_vector_retriever
+from backend.Agent.RAG.BM25Retriever import get_bm25_retriever
+from backend.Agent.RAG.vector_retriever import get_vector_retriever
 from functools import lru_cache
 
 
