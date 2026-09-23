@@ -18,6 +18,6 @@ class Settings(BaseSettings):
     DATABASE_URL : str
     PADDLEOCR_TOKEN :str
 
-    knowledge_path : str =str(_base_dir/'RAG'/'knowledge'/'杜诗.csv')
+    knowledge_path : str =str(_base_dir/'Agent'/'RAG'/'knowledge'/'杜诗.csv')
 
 settings = Settings()

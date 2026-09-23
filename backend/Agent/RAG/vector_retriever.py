@@ -1,4 +1,4 @@
-from backend.RAG.define_rag import init_vector
+from backend.Agent.RAG.define_rag import init_vector
 from functools import lru_cache
 
 @lru_cache(maxsize=1)
