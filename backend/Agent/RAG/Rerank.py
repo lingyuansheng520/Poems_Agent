@@ -10,7 +10,7 @@ from backend.Agent.RAG.RRF import get_ensemble_retriever
 def init_reranker():
     rerank_path=Path(_base_dir/'Agent'/'RAG'/"embedding_models"/"reranker"/"models"/"BAAI--bge-reranker-base"/"snapshots"/'master')
     cross_encode=HuggingFaceCrossEncoder(model_name=str(rerank_path))
-    reranker=CrossEncoderReranker(model=cross_encode,top_n=3)
+    reranker=CrossEncoderReranker(model=cross_encode,top_n=5)
     return reranker
 
 @lru_cache(maxsize=1)
