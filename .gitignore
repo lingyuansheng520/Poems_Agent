@@ -7,10 +7,11 @@ __pycache__/
 **/__pycache__/
 *.pyc
 
-# 本地模型（体积过大，改为脚本下载）
-backend/embedding_models/
-# 向量库（可由脚本重建）
-backend/vector_db/
+# 本地模型（体积过大，改为脚本下载）与向量库（可由脚本重建）
+# 使用与目录位置无关的规则：以后再移动目录也不会重新被跟踪
+**/embedding_models/
+**/vector_db/
+**/knowledge/*.csv.bak
 # 打包备份
 *.zip
 
