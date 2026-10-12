@@ -1,3 +1,5 @@
+import hashlib
+import json
 from functools import lru_cache
 from pathlib import Path
 
@@ -6,19 +8,19 @@ from langchain_chroma import Chroma
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
 from backend.Agent.RAG.load_document import load_document
-from backend.Config.config import _base_dir
+from backend.Config.config import settings, _base_dir
 
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-VECTOR_DIR = _base_dir / 'Agent' / 'RAG' / 'vector_db'
+DATA_ROOT = _base_dir / 'Agent' / 'RAG' / 'vector_db'
 
 
 @lru_cache(maxsize=1)
 def init_embedding():
-    embedding_path = str(_base_dir / 'Agent' / 'RAG' / 'embedding_models' / 'bge-base-zh-v1.5')
+    embedding_path = settings.embedding_path
     embedding = HuggingFaceEmbeddings(
         model_name=embedding_path,
         model_kwargs={"device": "cpu"},
@@ -28,7 +30,7 @@ def init_embedding():
 
 
 def collection_size(path: Path) -> int:
-    if not (path / 'chroma.sqlite3').exists():
+    if not path.exists() or not (path / 'chroma.sqlite3').exists():
         return 0
     try:
         client = chromadb.PersistentClient(path=str(path))
@@ -43,35 +45,30 @@ def collection_size(path: Path) -> int:
         return 0
 
 
-@lru_cache(maxsize=1)
-def resolve_vector_path() -> Path:
-
-    if collection_size(VECTOR_DIR) > 0:
-        return VECTOR_DIR
-    candidates = sorted(
-        (
-            p for p in VECTOR_DIR.iterdir()
-            if p.is_dir() and (p / 'chroma.sqlite3').exists()
-        ),
-        key=lambda p: p.name,
-    )
-    best_path, best_size = None, 0
-    for candidate in candidates:
-        size = collection_size(candidate)
-        if size > best_size:  # 取条数最多的；条数相同则保留名字靠前的
-            best_path, best_size = candidate, size
-
-    if best_path is not None:
-        logger.info('向量库实际数据位于：%s（%d 条）', best_path, best_size)
-        return best_path
-
-    return VECTOR_DIR
+def fingerprint() -> str:
+    h = hashlib.sha256()
+    with open(str(settings.knowledge_path), 'rb') as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            h.update(byte_block)
+    return hashlib.sha256(
+        f'{h.hexdigest()}|{len(load_document())}|{settings.TEXT_FIELDS}|{settings.UNK}'.encode()
+    ).hexdigest()[:8]
 
 
 @lru_cache(maxsize=1)
 def init_vector():
+    doc = load_document()
     embedding = init_embedding()
-    vector_path = resolve_vector_path()
+    fp = fingerprint()
+    vector_path = Path(f'{DATA_ROOT}/{fp}')
+
+    if (vector_path / 'version.json').exists():
+        logger.info(f'复用向量库，指纹为{fp}')
+        return Chroma(
+            embedding_function=embedding,
+            persist_directory=str(vector_path),
+        )
+
     vector = Chroma(
         embedding_function=embedding,
         persist_directory=str(vector_path),
@@ -79,12 +76,15 @@ def init_vector():
 
     # 只有空库才灌数据：这样既保证首次运行可用，也不会每次启动重复写库
     if collection_size(vector_path) == 0:
-        doc = load_document()
         batch_size = 500
         total_size = len(doc)
         for i in range(0, total_size, batch_size):
             batch = doc[i:min(i + batch_size, total_size)]
             vector.add_documents(batch)
-        logger.info('往向量库 %s 添加 %d 条数据', vector_path, total_size)
+        (vector_path / 'version.json').write_text(
+            json.dumps({'fingerprint': fp, 'rows': len(doc)}, ensure_ascii=False),
+            encoding='utf8',
+        )
+        logger.info(f'成功创建向量知识库，指纹为{fp}，往向量库添加{total_size}条数据')
 
     return vector
