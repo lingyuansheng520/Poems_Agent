@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>杜诗智能问答 · 测试前端</title>
+<style>
+  * { box-sizing: border-box; }
+  [v-cloak] { display: none; }
+  body {
+    margin: 0; height: 100vh; overflow: hidden;
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    background: #f5f6f8; color: #1f2329;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea { font-family: inherit; }
+
+  /* ---------- 登录页 ---------- */
+  .auth-wrap { height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .auth-card {
+    width: 360px; background: #fff; border-radius: 12px; padding: 28px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.06);
+  }
+  .auth-card h1 { font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+  .auth-card .sub { font-size: 12px; color: #8a9099; margin-bottom: 20px; }
+  .tabs { display: flex; gap: 4px; background: #f0f1f3; padding: 3px; border-radius: 8px; margin-bottom: 18px; }
+  .tabs button {
+    flex: 1; padding: 7px 0; border: 0; background: transparent; border-radius: 6px;
+    font-size: 13px; color: #5a6068;
+  }
+  .tabs button.on { background: #fff; color: #1f2329; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: #5a6068; margin-bottom: 5px; }
+  .field input {
+    width: 100%; padding: 9px 11px; border: 1px solid #d9dce0; border-radius: 7px;
+    font-size: 13px; outline: none;
+  }
+  .field input:focus { border-color: #3b82f6; }
+  .radio-row { display: flex; gap: 16px; font-size: 13px; padding-top: 2px; }
+  .radio-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .btn-primary {
+    width: 100%; padding: 10px; border: 0; border-radius: 7px; background: #3b82f6;
+    color: #fff; font-size: 14px; font-weight: 500; margin-top: 6px;
+  }
+  .btn-primary:disabled { background: #a9c6f5; cursor: not-allowed; }
+  .alert { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 7px;
+           padding: 8px 11px; font-size: 12.5px; margin-bottom: 12px; line-height: 1.5; }
+  .hint { font-size: 11.5px; color: #a0a5ad; margin-top: 14px; line-height: 1.6; }
+
+  /* ---------- 主界面 ---------- */
+  .app { height: 100vh; display: flex; }
+  .side {
+    width: 264px; flex: 0 0 264px; background: #fff; border-right: 1px solid #e6e8eb;
+    display: flex; flex-direction: column;
+  }
+  .side-head { padding: 14px 14px 10px; border-bottom: 1px solid #f0f1f3; }
+  .me { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+  .me small { color: #8a9099; font-weight: 400; }
+  .side-btns { display: flex; gap: 6px; }
+  .side-btns button {
+    flex: 1; padding: 7px 0; border: 1px solid #d9dce0; background: #fff;
+    border-radius: 6px; font-size: 12.5px; color: #3c4149;
+  }
+  .side-btns button.primary { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+  .sess-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .sess {
+    padding: 9px 10px; border-radius: 7px; margin-bottom: 3px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sess:hover { background: #f5f6f8; }
+  .sess.on { background: #eaf2fe; }
+  .sess .t { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sess .c { font-size: 11px; color: #a0a5ad; }
+  .sess .ops { display: none; gap: 2px; }
+  .sess:hover .ops { display: flex; }
+  .sess .ops button {
+    border: 0; background: transparent; padding: 2px 3px; font-size: 12px;
+    color: #8a9099; border-radius: 4px;
+  }
+  .sess .ops button:hover { background: #e6e8eb; color: #1f2329; }
+  .empty-tip { text-align: center; color: #a0a5ad; font-size: 12.5px; padding: 24px 12px; line-height: 1.7; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .main-head {
+    padding: 11px 20px; background: #fff; border-bottom: 1px solid #e6e8eb;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .main-head .title { font-size: 13.5px; font-weight: 500; flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .main-head a { font-size: 12.5px; color: #3b82f6; text-decoration: none; }
+
+  .msgs { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .msg { max-width: 780px; margin: 0 auto 18px; display: flex; gap: 10px; }
+  .msg .who {
+    flex: 0 0 30px; height: 30px; border-radius: 6px; font-size: 11.5px;
+    display: flex; align-items: center; justify-content: center; font-weight: 500;
+  }
+  .msg.user .who { background: #e8f0fe; color: #1a56c4; }
+  .msg.assistant .who { background: #eaf7ef; color: #1a7f45; }
+  .msg .body { flex: 1; min-width: 0; }
+  .msg .text {
+    background: #fff; border: 1px solid #e6e8eb; border-radius: 9px;
+    padding: 11px 13px; font-size: 13.5px; line-height: 1.75;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .text { background: #eaf2fe; border-color: #d6e6fd; }
+  .meta-line { font-size: 11.5px; color: #a0a5ad; margin: 5px 0 0 2px; display: flex; gap: 10px; align-items: center; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+  .badge.search { background: #eaf7ef; color: #1a7f45; }
+  .badge.chat { background: #f0f1f3; color: #5a6068; }
+  .cites { margin-top: 7px; border-top: 1px dashed #e6e8eb; padding-top: 7px; }
+  .cites .ct { font-size: 11.5px; color: #8a9099; margin-bottom: 4px; }
+  .cites .ci {
+    font-size: 12px; color: #5a6068; background: #f7f8fa; border-radius: 5px;
+    padding: 5px 8px; margin-bottom: 3px; line-height: 1.6;
+  }
+  .cites .ci b { color: #1f2329; font-weight: 500; }
+  .caret { display: inline-block; width: 7px; height: 14px; background: #3b82f6;
+    vertical-align: -2px; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .thinking { color: #8a9099; font-size: 13px; }
+
+  .composer { padding: 12px 20px 16px; background: #fff; border-top: 1px solid #e6e8eb; }
+  .composer-inner { max-width: 780px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
+  .composer textarea {
+    flex: 1; resize: none; border: 1px solid #d9dce0; border-radius: 9px;
+    padding: 10px 12px; font-size: 13.5px; line-height: 1.6; outline: none;
+    min-height: 42px; max-height: 140px;
+  }
+  .composer textarea:focus { border-color: #3b82f6; }
+  .composer button {
+    padding: 10px 18px; border: 0; border-radius: 9px; background: #3b82f6;
+    color: #fff; font-size: 13.5px; font-weight: 500;
+  }
+  .composer button:disabled { background: #a9c6f5; cursor: not-allowed; }
+  .warn { text-align: center; font-size: 11.5px; color: #a0a5ad; margin-top: 7px; }
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <!-- ================= 未登录 ================= -->
+  <div class="auth-wrap" v-if="!me">
+    <div class="auth-card">
+      <h1>杜诗智能问答</h1>
+      <div class="sub">接口联调用的测试前端</div>
+
+      <div class="tabs">
+        <button :class="{on: mode==='login'}" @click="switchMode('login')">登录</button>
+        <button :class="{on: mode==='register'}" @click="switchMode('register')">注册</button>
+      </div>
+
+      <div class="alert" v-if="authError">{{ authError }}</div>
+
+      <div class="field">
+        <label>用户名</label>
+        <input v-model="form.user_name" placeholder="2-20 个字符" @keyup.enter="submitAuth">
+      </div>
+      <div class="field" v-if="mode==='register'">
+        <label>邮箱</label>
+        <input v-model="form.email" placeholder="someone@example.com" @keyup.enter="submitAuth">
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <input type="password" v-model="form.password" placeholder="至少 6 位" @keyup.enter="submitAuth">
+      </div>
+      <div class="field" v-if="mode==='register'">
+        <label>性别</label>
+        <div class="radio-row">
+          <label><input type="radio" :value="1" v-model.number="form.gender"> 男</label>
+          <label><input type="radio" :value="0" v-model.number="form.gender"> 女</label>
+        </div>
+      </div>
+
+      <button class="btn-primary" :disabled="authBusy" @click="submitAuth">
+        {{ authBusy ? '请稍候…' : (mode==='login' ? '登录' : '注册并登录') }}
+      </button>
+
+      <div class="hint">
+        登录走 OAuth2 表单流，接口文档见 <a href="/docs" target="_blank">/docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 已登录 ================= -->
+  <div class="app" v-else>
+    <aside class="side">
+      <div class="side-head">
+        <div class="me">{{ me.user_name }} <small>#{{ me.user_id }}</small></div>
+        <div class="side-btns">
+          <button class="primary" @click="createSession" :disabled="busy">+ 新会话</button>
+          <button @click="logout" style="flex:0 0 58px">退出</button>
+        </div>
+      </div>
+      <div class="sess-list">
+        <div class="empty-tip" v-if="!sessions.length">还没有会话<br>点上方「新会话」开始</div>
+        <div class="sess" v-for="s in sessions" :key="s.session_id"
+             :class="{on: s.session_id === currentId}" @click="openSession(s.session_id)">
+          <span class="t" :title="s.session_title || '新会话'">{{ s.session_title || '新会话' }}</span>
+          <span class="c">{{ s.message_count }}</span>
+          <span class="ops">
+            <button title="重命名" @click.stop="renameSession(s)">✎</button>
+            <button title="删除" @click.stop="deleteSession(s)">✕</button>
+          </span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-head">
+        <span class="title">{{ currentTitle }}</span>
+        <span class="badge chat" v-if="sending">生成中…</span>
+        <a href="/docs" target="_blank">API 文档</a>
+      </div>
+
+      <div class="msgs" ref="msgsEl">
+        <div class="empty-tip" v-if="!messages.length">
+          {{ currentId ? '这个会话还没有消息，直接提问吧' : '左侧新建或选择一个会话' }}
+        </div>
+
+        <div class="msg" v-for="(m, i) in messages" :key="i" :class="m.role">
+          <div class="who">{{ m.role === 'user' ? '我' : 'AI' }}</div>
+          <div class="body">
+            <div class="text" v-if="m.content">{{ m.content }}<span class="caret" v-if="m.pending"></span></div>
+            <div class="text thinking" v-else>{{ m.pending ? '正在思考…' : '（空）' }}</div>
+
+            <div class="cites" v-if="m.citations && m.citations.length">
+              <div class="ct">引用知识库 {{ m.citations.length }} 条</div>
+              <div class="ci" v-for="c in m.citations" :key="c.ref">
+                <b>【{{ c.ref }}】《{{ c.title }}》</b>
+                <span v-if="c.source && c.source !== '未著录'"> · 出处：{{ c.source }}</span>
+                <span v-if="c.time"> · {{ c.time }}</span>
+                <span v-if="c.place"> · {{ c.place }}</span>
+              </div>
+            </div>
+
+            <div class="meta-line" v-if="!m.pending && (m.isSearch !== null || m.elapsedMs)">
+              <span class="badge search" v-if="m.isSearch === true">已检索知识库</span>
+              <span class="badge chat" v-else-if="m.isSearch === false">未检索（闲聊/常识）</span>
+              <span v-if="m.elapsedMs">耗时 {{ (m.elapsedMs / 1000).toFixed(1) }}s</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="composer-inner">
+          <textarea v-model="draft" rows="1" placeholder="问点什么，比如：杜甫《春望》的创作背景？"
+                    @keydown.enter.exact.prevent="send" :disabled="!currentId || sending"></textarea>
+          <button @click="send" :disabled="!currentId || sending || !draft.trim()">
+            {{ sending ? '生成中' : '发送' }}
+          </button>
+        </div>
+        <div class="warn" v-if="!currentId">请先新建或选择一个会话</div>
+        <div class="warn" v-else>Enter 发送 · Shift+Enter 换行 · 首次提问需加载向量模型，可能较慢</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="/static/vue.global.prod.js"></script>
+<script>
+const { createApp, ref, reactive, computed, nextTick } = Vue;
+
+createApp({
+  setup() {
+    const token = ref(localStorage.getItem('ds_token') || '');
+    const me = ref(null);
+    const mode = ref('login');
+    const form = reactive({ user_name: '', password: '', email: '', gender: 1 });
+    const authError = ref('');
+    const authBusy = ref(false);
+
+    const sessions = ref([]);
+    const currentId = ref('');
+    const messages = ref([]);
+    const draft = ref('');
+    const sending = ref(false);
+    const busy = ref(false);
+    const msgsEl = ref(null);
+
+    const currentTitle = computed(() => {
+      const s = sessions.value.find(x => x.session_id === currentId.value);
+      return s ? (s.session_title || '新会话') : '未选择会话';
+    });
+
+    /* ------------ 通用请求 ------------ */
+    async function api(path, { method = 'GET', body, form: asForm = false } = {}) {
+      const headers = {};
+      if (token.value) headers['Authorization'] = 'Bearer ' + token.value;
+      let payload;
+      if (body !== undefined) {
+        if (asForm) {
+          headers['Content-Type'] = 'application/x-www-form-urlencoded';
+          payload = new URLSearchParams(body).toString();
+        } else {
+          headers['Content-Type'] = 'application/json';
+          payload = JSON.stringify(body);
+        }
+      }
+      const res = await fetch(path, { method, headers, body: payload });
+      const raw = await res.text();
+      let data = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch (e) { data = raw; }
+
+      if (!res.ok) {
+        if (res.status === 401 && token.value) { logout(); throw new Error('登录已过期，请重新登录'); }
+        let msg = 'HTTP ' + res.status;
+        if (data && typeof data.detail === 'string') msg = data.detail;
+        else if (data && Array.isArray(data.detail) && data.detail.length)
+          msg = data.detail.map(d => (d.loc || []).slice(1).join('.') + ' ' + d.msg).join('；');
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    /* ------------ 认证 ------------ */
+    function switchMode(m) { mode.value = m; authError.value = ''; }
+
+    async function submitAuth() {
+      authError.value = '';
+      authBusy.value = true;
+      try {
+        let data;
+        if (mode.value === 'login') {
+          data = await api('/auth/login', {
+            method: 'POST', form: true,
+            body: { username: form.user_name.trim(), password: form.password }
+          });
+        } else {
+          data = await api('/auth/register', {
+            method: 'POST',
+            body: {
+              user_name: form.user_name.trim(), password: form.password,
+              email: form.email.trim(), gender: form.gender
+            }
+          });
+        }
+        token.value = data.access_token;
+        localStorage.setItem('ds_token', data.access_token);
+        form.password = '';
+        await loadMe();
+        await loadSessions();
+      } catch (e) {
+        authError.value = e.message;
+        token.value = '';
+        localStorage.removeItem('ds_token');
+      } finally {
+        authBusy.value = false;
+      }
+    }
+
+    async function loadMe() {
+      try { me.value = await api('/auth/me'); }
+      catch (e) { me.value = null; throw e; }
+    }
+
+    function logout() {
+      token.value = '';
+      me.value = null;
+      sessions.value = [];
+      messages.value = [];
+      currentId.value = '';
+      localStorage.removeItem('ds_token');
+    }
+
+    /* ------------ 滚动 ------------ */
+    function scrollToBottom() {
+      nextTick(() => {
+        const el = msgsEl.value;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    }
+
+    /* ------------ 会话 ------------ */
+    async function loadSessions() {
+      const data = await api('/sessions?limit=100');
+      sessions.value = data.items || [];
+    }
+
+    async function createSession() {
+      busy.value = true;
+      try {
+        const s = await api('/sessions', { method: 'POST', body: {} });
+        await loadSessions();
+        await openSession(s.session_id);
+      } catch (e) { alert('新建会话失败：' + e.message); }
+      finally { busy.value = false; }
+    }
+
+    async function openSession(id) {
+      currentId.value = id;
+      try {
+        const d = await api('/sessions/' + id + '?limit=500');
+        messages.value = (d.messages || []).map(m => ({
+          role: m.role, content: m.content, citations: [], isSearch: null, elapsedMs: null, pending: false
+        }));
+        scrollToBottom();
+      } catch (e) { alert('加载会话失败：' + e.message); }
+    }
+
+    async function renameSession(s) {
+      const title = prompt('新的会话标题', s.session_title || '');
+      if (title === null || !title.trim()) return;
+      try {
+        await api('/sessions/' + s.session_id, {
+          method: 'PATCH', body: { session_title: title.trim() }
+        });
+        await loadSessions();
+      } catch (e) { alert('重命名失败：' + e.message); }
+    }
+
+    async function deleteSession(s) {
+      if (!confirm('删除会话「' + (s.session_title || '新会话') + '」？其消息会一并删除。')) return;
+      try {
+        await api('/sessions/' + s.session_id, { method: 'DELETE' });
+        if (currentId.value === s.session_id) { currentId.value = ''; messages.value = []; }
+        await loadSessions();
+      } catch (e) { alert('删除失败：' + e.message); }
+    }
+
+    /* ------------ SSE 解析 ------------ */
+    async function readSSE(res, onEvent) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buf = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf('\n\n')) !== -1) {
+          const block = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          let name = 'message', data = '';
+          for (const line of block.split('\n')) {
+            const t = line.replace(/\r$/, '');
+            if (t.startsWith('event:')) name = t.slice(6).trim();
+            else if (t.startsWith('data:')) data += t.slice(5).trim();
+          }
+          if (data) {
+            try { onEvent(name, JSON.parse(data)); } catch (e) { /* 忽略坏帧 */ }
+          }
+        }
+      }
+    }
+
+    /* ------------ 发送 + 流式接收 ------------ */
+    async function send() {
+      const text = draft.value.trim();
+      if (!text || sending.value || !currentId.value) return;
+
+      draft.value = '';
+      sending.value = true;
+
+      messages.value.push({ role: 'user', content: text, citations: [], isSearch: null, elapsedMs: null, pending: false });
+      const reply = reactive({
+        role: 'assistant', content: '', citations: [],
+        isSearch: null, elapsedMs: null, pending: true
+      });
+      messages.value.push(reply);
+      scrollToBottom();
+
+      try {
+        const res = await fetch('/sessions/' + currentId.value + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token.value },
+          body: JSON.stringify({ content: text })
+        });
+
+        if (!res.ok) {
+          const raw = await res.text();
+          let msg = 'HTTP ' + res.status;
+          try { const j = JSON.parse(raw); if (typeof j.detail === 'string') msg = j.detail; } catch (e) {}
+          throw new Error(msg);
+        }
+
+        await readSSE(res, (name, data) => {
+          if (name === 'delta') {
+            reply.content += data.text;
+            scrollToBottom();
+          } else if (name === 'citations') {
+            reply.citations = data.citations || [];
+            scrollToBottom();
+          } else if (name === 'status') {
+            reply.isSearch = data.is_search;
+          } else if (name === 'done') {
+            reply.content = data.message.content;
+            reply.citations = data.citations || reply.citations;
+            reply.elapsedMs = data.elapsed_ms;
+            reply.pending = false;
+            scrollToBottom();
+          } else if (name === 'error') {
+            reply.content += (reply.content ? '\n\n' : '') + '⚠ ' + data.detail;
+            reply.pending = false;
+            scrollToBottom();
+          }
+        });
+      } catch (e) {
+        reply.content += (reply.content ? '\n\n' : '') + '⚠ 请求失败：' + e.message;
+      } finally {
+        reply.pending = false;
+        sending.value = false;
+        scrollToBottom();
+        try { await loadSessions(); } catch (e) {}
+      }
+    }
+
+    /* ------------ 启动 ------------ */
+    (async function boot() {
+      if (!token.value) return;
+      try {
+        await loadMe();
+        await loadSessions();
+      } catch (e) {
+        logout();
+      }
+    })();
+
+    return {
+      token, me, mode, form, authError, authBusy,
+      sessions, currentId, messages, draft, sending, busy, msgsEl, currentTitle,
+      switchMode, submitAuth, logout, loadSessions, createSession, openSession,
+      renameSession, deleteSession, send
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

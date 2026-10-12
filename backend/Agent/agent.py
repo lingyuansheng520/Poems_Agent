@@ -50,7 +50,6 @@ build_graph.add_node('retriever',retriever)
 build_graph.add_node('model_call',model_call)
 build_graph.add_edge(START,'rewrite')
 build_graph.add_conditional_edges('rewrite',search_router,{'retriever':'retriever','model_call':'model_call'})
-build_graph.add_edge('rewrite','retriever')
 build_graph.add_edge('retriever','model_call')
 build_graph.add_edge('model_call',END)
 
